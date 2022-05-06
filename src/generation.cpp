@@ -23,7 +23,15 @@ void Generation::NextGeneration(const Image *canvas, const Image *target) {
     if (fInitialised) {
       delete fImageArray[i];
     }
-    fImageArray[i] = rand_triangle_centre_colour(canvas, target, 1.0);
+
+    // determine new feature size
+    float feature_size;
+    if (fNumImages > 1) {
+        feature_size = i*(fMaxFeatureSize-fMinFeatureSize)/(fNumImages-1) + fMinFeatureSize;
+    } else {
+        feature_size = fMaxFeatureSize;
+    }
+    fImageArray[i] = rand_triangle_centre_colour(canvas, target, feature_size);
   }
 
   fInitialised = true;
