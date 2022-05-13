@@ -12,6 +12,17 @@ if(CMAKE_BUILD_TYPE)
     add_compile_definitions(BUILD_${_upper_build_type}=1)
 endif()
 
+# allow OpenMP
+OPTION (USE_OpenMP "Use OpenMP" ON)
+IF(USE_OpenMP)
+  FIND_PACKAGE(OpenMP)
+  IF(OPENMP_FOUND)
+    SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    add_compile_definitions(cimg_use_openmp=1)
+  ENDIF()
+ENDIF()
+
 find_package(X11 REQUIRED)
 
 # add include dir

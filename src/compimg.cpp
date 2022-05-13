@@ -1,5 +1,6 @@
 #include "compimg.h"
 #include "consts.h"
+#include <omp.h>
 
 constexpr int square(int x) { return x * x; }
 
@@ -8,6 +9,7 @@ double img_error(const Image *im1, const Image *im2) {
   Image im2_ = *im2;
 
   double err = 0;
+#pragma omp parallel for reduction(+:err)
   for (int y = 0; y < im1->height(); ++y) {
     for (int x = 0; x < im1->width(); ++x) {
       /// TODO: generalise to other channel counts
