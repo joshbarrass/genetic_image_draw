@@ -6,6 +6,12 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
+# set build type variable in preprocessor
+if(CMAKE_BUILD_TYPE)
+    string(TOUPPER "${CMAKE_BUILD_TYPE}" _upper_build_type)
+    add_compile_definitions(BUILD_${_upper_build_type}=1)
+endif()
+
 find_package(X11 REQUIRED)
 
 # add include dir

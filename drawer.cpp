@@ -1,22 +1,83 @@
 #include <iostream>
 #include <stdio.h>
 #include <ctime>
+#include <getopt.h>
+#include <unistd.h>
 #include "rand.h"
 #include "rand_ops.h"
 #include "compimg.h"
 #include "progressBar.h"
 #include "generation.h"
 
-#define IMAGE_FILE "jamescrews.bmp"
-constexpr int ITERATIONS = 1000;
-constexpr int IMAGES_PER_GENERATION = 1;
 
-int main() {
+int main(int argc, char **argv) {
   // seed rng
   seed(time(0));
-  
-  Image *target = new Image(IMAGE_FILE);
 
+  std::string IMAGE_FILE;
+  bool set_image_file = false;
+  std::string OUT_FILE;
+  bool set_out_file = false;
+  int ITERATIONS;
+  bool set_iterations = false;
+  int IMAGES_PER_GENERATION = 1;
+
+  option longopts[] = {{"triangles", required_argument, NULL, 'n'},
+                       {"output", required_argument, NULL, 'o'},
+                       {"target", required_argument, NULL, 'f'},
+                       {"per-generation", required_argument, NULL, 'g'},
+                       {0}};
+
+  int opt;
+  while ((opt = getopt_long(argc, argv, "n:o:f:g:", longopts, 0)) != -1) {
+    switch (opt) {
+    case 'n':
+      ITERATIONS = atoi(optarg);
+      set_iterations = true;
+      break;
+    case 'o':
+      OUT_FILE = std::string(optarg);
+      set_out_file = true;
+      break;
+    case 'f':
+      IMAGE_FILE = std::string(optarg);
+      set_image_file = true;
+      break;
+    case 'g':
+      IMAGES_PER_GENERATION = atoi(optarg);
+      break;
+    case ':':
+      using namespace std;
+      cerr << "Option '" << optopt << "' missing arg" << endl;
+    case '?':
+      // using namespace std;
+      // cerr << "Unrecognised argument: '" << optopt << "'" << endl;
+      // return 1;
+      break;
+    default:
+      abort();
+    }
+  }
+
+  {
+    using namespace std;
+    if (!set_image_file) {
+      cerr << "Required argument --target not set" << endl;
+      return 2;
+    }
+    if (!set_out_file) {
+      cerr << "Required argument --output not set" << endl;
+      return 2;
+    }
+    if (!set_iterations) {
+      cerr << "Required argument --triangles not set" << endl;
+      return 2;
+    }
+  }
+
+  Image *target = new Image(IMAGE_FILE.c_str());
+
+  #ifdef BUILD_DEBUG
   // std::cout << "Width: " << target->width() << std::endl;
   unsigned char testColour[3];
   int x = 360;
@@ -30,10 +91,11 @@ int main() {
     using namespace std;
     cout << "C: " << (int)testColour[0] << " " << (int)testColour[1] << " " << (int)testColour[2] << endl;
   }
+  #endif
 
   // create a blank canvas
   Image *canvas = new Image(target->width(), target->height(), target->depth(), target->spectrum());
-  canvas->fill(255);
+  canvas->fill(0);
 
   // find error between target and canvas
   double err = img_error(target, canvas);
@@ -64,5 +126,5 @@ int main() {
   } while (pbar.GetValue() < ITERATIONS);
 
   std::cout << std::endl;
-  canvas -> save("test.jpg");
+  canvas -> save(OUT_FILE.c_str());
 }
