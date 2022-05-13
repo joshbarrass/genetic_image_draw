@@ -3,11 +3,25 @@
 #include <ctime>
 #include <getopt.h>
 #include <unistd.h>
+#include <filesystem>
 #include "rand.h"
 #include "rand_ops.h"
 #include "compimg.h"
 #include "progressBar.h"
 #include "generation.h"
+
+const std::string HELP_TEXT_FORMAT = R"(%1$s -- Draw Images Genetically
+Usage:
+  %1$s -f <target> -n <num_triangles> -o <output> [-g <per_generation>] [-r <resume>]
+  %1$s --help
+
+-f --target          Path to image file to aim for
+-o --output          Path to output final image to
+-n --triangles       Number of triangles to draw
+-g --per-generation  Number of triangles to attempt to draw each generation
+-r --resume          Path to image to load instead of blank canvas
+-h --help            Print this message
+)";
 
 
 int main(int argc, char **argv) {
@@ -21,16 +35,28 @@ int main(int argc, char **argv) {
   int ITERATIONS;
   bool set_iterations = false;
   int IMAGES_PER_GENERATION = 1;
+  std::string RESUME_FILE;
+  bool set_resume_file = false;
 
   option longopts[] = {{"triangles", required_argument, NULL, 'n'},
                        {"output", required_argument, NULL, 'o'},
                        {"target", required_argument, NULL, 'f'},
                        {"per-generation", required_argument, NULL, 'g'},
+                       {"resume", required_argument, NULL, 'r'},
+                       {"help", no_argument, NULL, 'h'},
                        {0}};
 
   int opt;
-  while ((opt = getopt_long(argc, argv, "n:o:f:g:", longopts, 0)) != -1) {
+  // drop into new scope because this_file may never be initialised
+  // and is not needed beyond this
+  {std::filesystem::path this_file;
+  while ((opt = getopt_long(argc, argv, "n:o:f:g:r:h", longopts, 0)) != -1) {
     switch (opt) {
+    case 'h':
+      this_file = std::filesystem::path(argv[0]);
+      std::fprintf(stderr, HELP_TEXT_FORMAT.c_str(),
+                   this_file.filename().u8string().c_str());
+      return 0;
     case 'n':
       ITERATIONS = atoi(optarg);
       set_iterations = true;
@@ -46,9 +72,14 @@ int main(int argc, char **argv) {
     case 'g':
       IMAGES_PER_GENERATION = atoi(optarg);
       break;
+    case 'r':
+      RESUME_FILE = std::string(optarg);
+      set_resume_file = true;
+      break;
     case ':':
       using namespace std;
       cerr << "Option '" << optopt << "' missing arg" << endl;
+      break;
     case '?':
       // using namespace std;
       // cerr << "Unrecognised argument: '" << optopt << "'" << endl;
@@ -57,6 +88,7 @@ int main(int argc, char **argv) {
     default:
       abort();
     }
+  }
   }
 
   {
@@ -93,9 +125,21 @@ int main(int argc, char **argv) {
   }
   #endif
 
-  // create a blank canvas
-  Image *canvas = new Image(target->width(), target->height(), target->depth(), target->spectrum());
-  canvas->fill(0);
+  Image *canvas;
+  if (set_resume_file) {
+    canvas = new Image(RESUME_FILE.c_str());
+    if ((canvas->width() != target->width()) ||
+        (canvas->height() != target->height())) {
+      using namespace std;
+      cerr << "Resume image does not have the same dimensions as target image" << endl;
+      return 4;
+    }
+  } else {
+    // create a blank canvas
+    canvas = new Image(target->width(), target->height(),
+                              target->depth(), target->spectrum());
+    canvas->fill(0);
+  }
 
   // find error between target and canvas
   double err = img_error(target, canvas);
