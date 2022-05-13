@@ -12,6 +12,16 @@ if(CMAKE_BUILD_TYPE)
     add_compile_definitions(BUILD_${_upper_build_type}=1)
 endif()
 
+# profiling
+OPTION (ENABLE_PROFILING "Enable profiling" OFF)
+IF (ENABLE_PROFILING)
+  MESSAGE("-- Profiling enabled")
+  SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+  SET(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -pg")
+  SET(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -pg")
+ENDIF()
+
 # allow OpenMP
 OPTION (USE_OpenMP "Use OpenMP" ON)
 IF(USE_OpenMP)
@@ -20,6 +30,7 @@ IF(USE_OpenMP)
     SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
     SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
     add_compile_definitions(cimg_use_openmp=1)
+    add_compile_definitions(USE_OPENMP=1)
   ENDIF()
 ENDIF()
 
