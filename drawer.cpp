@@ -25,9 +25,6 @@ Usage:
 
 
 int main(int argc, char **argv) {
-  // seed rng
-  seed(time(0));
-
   std::string IMAGE_FILE;
   bool set_image_file = false;
   std::string OUT_FILE;
@@ -37,20 +34,23 @@ int main(int argc, char **argv) {
   int IMAGES_PER_GENERATION = 1;
   std::string RESUME_FILE;
   bool set_resume_file = false;
+  int SEED;
+  bool set_seed = false;
 
-  option longopts[] = {{"triangles", required_argument, NULL, 'n'},
-                       {"output", required_argument, NULL, 'o'},
-                       {"target", required_argument, NULL, 'f'},
-                       {"per-generation", required_argument, NULL, 'g'},
-                       {"resume", required_argument, NULL, 'r'},
-                       {"help", no_argument, NULL, 'h'},
-                       {0}};
+  option longopts[] = {
+      {"triangles", required_argument, NULL, 'n'},
+      {"output", required_argument, NULL, 'o'},
+      {"target", required_argument, NULL, 'f'},
+      {"per-generation", required_argument, NULL, 'g'},
+      {"resume", required_argument, NULL, 'r'},
+      {"seed", required_argument, NULL, 's'}, {"help", no_argument, NULL, 'h'},
+      {0}};
 
   int opt;
   // drop into new scope because this_file may never be initialised
   // and is not needed beyond this
   {std::filesystem::path this_file;
-  while ((opt = getopt_long(argc, argv, "n:o:f:g:r:h", longopts, 0)) != -1) {
+  while ((opt = getopt_long(argc, argv, "n:o:f:g:r:s:h", longopts, 0)) != -1) {
     switch (opt) {
     case 'h':
       this_file = std::filesystem::path(argv[0]);
@@ -75,6 +75,10 @@ int main(int argc, char **argv) {
     case 'r':
       RESUME_FILE = std::string(optarg);
       set_resume_file = true;
+      break;
+    case 's':
+      SEED = atoi(optarg);
+      set_seed = true;
       break;
     case ':':
       using namespace std;
@@ -106,6 +110,13 @@ int main(int argc, char **argv) {
       return 2;
     }
   }
+
+  // seed rng
+  if (!set_seed) {
+    SEED = time(0);
+  }
+  std::cerr << "Seed: " << SEED << std::endl;
+  seed(SEED);
 
   Image *target = new Image(IMAGE_FILE.c_str());
 
@@ -143,6 +154,18 @@ int main(int argc, char **argv) {
 
   // find error between target and canvas
   double err = img_error(target, canvas);
+  
+  #ifdef BUILD_DEBUG
+  double err1 = img_error_new(target, canvas);
+  double err2 = img_error_new(canvas, target);
+
+  {
+    using namespace std;
+    cout << "True Error: " << err << endl;
+    cout << "target - canvas: " << err1 << endl;
+    cout << "canvas - target: " << err2 << endl;
+  }
+#endif
 
   // create a genetic generation
   Generation gen(IMAGES_PER_GENERATION, 1.0, 0.5);
