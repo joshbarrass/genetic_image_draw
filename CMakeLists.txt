@@ -34,6 +34,12 @@ IF(USE_OpenMP)
   ENDIF()
 ENDIF()
 
+# testing new error function
+OPTION (USE_OLD_ERR "Use old error function instead of dot product-based one" OFF)
+IF(USE_OLD_ERR)
+  add_compile_definitions(USE_OLD_ERR=1)
+ENDIF()
+
 find_package(X11 REQUIRED)
 
 # add include dir

@@ -42,7 +42,11 @@ double Generation::GetBestError(const Image *target, Image *&best_image) {
   double lowest_error = img_error(target, fImageArray[0]);
   int best_index = 0;
   for (int i = 1; i < fNumImages; ++i) {
+    #ifndef USE_OLD_ERR
+    double err = img_error_new(target, fImageArray[i]);
+    #else
     double err = img_error(target, fImageArray[i]);
+    #endif
     if (err < lowest_error) {
       lowest_error = err;
       best_index = i;

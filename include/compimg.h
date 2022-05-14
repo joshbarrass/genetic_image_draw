@@ -4,5 +4,6 @@
 #include "consts.h"
 
 double img_error(const Image*, const Image*);
+double img_error_new(const Image*, const Image*);
 
 #endif

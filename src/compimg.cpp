@@ -1,6 +1,9 @@
 #include "compimg.h"
 #include "consts.h"
+
+#ifdef USE_OPENMP
 #include <omp.h>
+#endif
 
 constexpr int square(int x) { return x * x; }
 
@@ -9,7 +12,13 @@ double img_error(const Image *im1, const Image *im2) {
   Image im2_ = *im2;
 
   double err = 0;
+
+  // limit max threads to 4
+  // beyond this, overhead makes the problem worse
+  #ifdef USE_OPENMP
+  omp_set_num_threads(4);
 #pragma omp parallel for reduction(+:err)
+  #endif
   for (int y = 0; y < im1->height(); ++y) {
     for (int x = 0; x < im1->width(); ++x) {
       /// TODO: generalise to other channel counts
@@ -24,4 +33,14 @@ double img_error(const Image *im1, const Image *im2) {
     }
   }
   return err;
+}
+
+double img_error_new(const Image *im1, const Image *im2) {
+  using namespace cimg_library;
+  CImg<int> im1_ = CImg<int>(*im1);
+  CImg<int> im2_ = CImg<int>(*im2);
+
+  CImg<int> diff = im1_ - im2_;
+
+  return diff.dot(diff);
 }
