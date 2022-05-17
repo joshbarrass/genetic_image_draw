@@ -59,3 +59,15 @@ _deps
 *-prefix/
 
 # End of https://www.toptal.com/developers/gitignore/api/cmake
+
+# any image files
+.png
+.PNG
+.jpg
+.JPG
+.bmp
+.BMP
+.tif
+.TIF
+.webp
+.WEBP
