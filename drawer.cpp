@@ -23,20 +23,40 @@ Usage:
 -h --help            Print this message
 )";
 
-
-int main(int argc, char **argv) {
+class Main {
+public:
+  Main();
+  ~Main();
+  int parseArgs(int argc, char **argv);
+  int run();
+private:
   std::string IMAGE_FILE;
-  bool set_image_file = false;
+  bool set_image_file;
   std::string OUT_FILE;
-  bool set_out_file = false;
+  bool set_out_file;
   int ITERATIONS;
-  bool set_iterations = false;
-  int IMAGES_PER_GENERATION = 1;
+  bool set_iterations;
+  int IMAGES_PER_GENERATION;
   std::string RESUME_FILE;
-  bool set_resume_file = false;
+  bool set_resume_file;
   int SEED;
-  bool set_seed = false;
+  bool set_seed;
 
+  Image *target;
+  Image *canvas;
+};
+
+Main::Main() : set_image_file(false), set_out_file(false), set_iterations(false), IMAGES_PER_GENERATION(1), set_resume_file(false), set_seed(false), target(0), canvas(0) {}
+Main::~Main() {
+  if (target) {
+    delete target;
+  }
+  if (canvas) {
+    delete canvas;
+  }
+}
+
+int Main::parseArgs(int argc, char **argv) {
   option longopts[] = {
       {"triangles", required_argument, NULL, 'n'},
       {"output", required_argument, NULL, 'o'},
@@ -110,7 +130,10 @@ int main(int argc, char **argv) {
       return 2;
     }
   }
+  return 0;
+}
 
+int Main::run() {
   // seed rng
   if (!set_seed) {
     SEED = time(0);
@@ -118,7 +141,8 @@ int main(int argc, char **argv) {
   std::cerr << "Seed: " << SEED << std::endl;
   seed(SEED);
 
-  Image *target = new Image(IMAGE_FILE.c_str());
+  // load target image
+  target = new Image(IMAGE_FILE.c_str());
 
   #ifdef BUILD_DEBUG
   // std::cout << "Width: " << target->width() << std::endl;
@@ -136,7 +160,7 @@ int main(int argc, char **argv) {
   }
   #endif
 
-  Image *canvas;
+  // create canvas
   if (set_resume_file) {
     canvas = new Image(RESUME_FILE.c_str());
     if ((canvas->width() != target->width()) ||
@@ -165,7 +189,7 @@ int main(int argc, char **argv) {
     cout << "target - canvas: " << err1 << endl;
     cout << "canvas - target: " << err2 << endl;
   }
-#endif
+  #endif
 
   // create a genetic generation
   Generation gen(IMAGES_PER_GENERATION, 1.0, 0.5);
@@ -194,4 +218,14 @@ int main(int argc, char **argv) {
 
   std::cout << std::endl;
   canvas -> save(OUT_FILE.c_str());
+
+  return 0;
+}
+
+int main(int argc, char **argv) {
+  Main program = Main();
+  if (int err = program.parseArgs(argc, argv); err != 0) {
+    return err;
+  }
+  return program.run();
 }
