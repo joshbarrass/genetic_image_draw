@@ -10,6 +10,8 @@
 #include "progressBar.h"
 #include "generation.h"
 
+#include "main_class.h"
+
 const std::string HELP_TEXT_FORMAT = R"(%1$s -- Draw Images Genetically
 Usage:
   %1$s -f <target> -n <num_triangles> -o <output> [-g <per_generation>] [-r <resume>]
@@ -23,30 +25,7 @@ Usage:
 -h --help            Print this message
 )";
 
-class Main {
-public:
-  Main();
-  ~Main();
-  int parseArgs(int argc, char **argv);
-  int run();
-private:
-  std::string IMAGE_FILE;
-  bool set_image_file;
-  std::string OUT_FILE;
-  bool set_out_file;
-  int ITERATIONS;
-  bool set_iterations;
-  int IMAGES_PER_GENERATION;
-  std::string RESUME_FILE;
-  bool set_resume_file;
-  int SEED;
-  bool set_seed;
-
-  Image *target;
-  Image *canvas;
-};
-
-Main::Main() : set_image_file(false), set_out_file(false), set_iterations(false), IMAGES_PER_GENERATION(1), set_resume_file(false), set_seed(false), target(0), canvas(0) {}
+Main::Main() : set_image_file(false), set_out_file(false), set_iterations(false), IMAGES_PER_GENERATION(1), set_resume_file(false), set_seed(false), target(0), canvas(0), FINISH_NOW(false) {}
 Main::~Main() {
   if (target) {
     delete target;
@@ -214,7 +193,7 @@ int Main::run() {
       std::cout << " (" << pbar.GetValue() << "/" <<  ITERATIONS << ")";
       printf(" (error: %.3E)", err);
     } // otherwise, do nothing. Memory will be freed next generation.
-  } while (pbar.GetValue() < ITERATIONS);
+  } while (pbar.GetValue() < ITERATIONS && (!FINISH_NOW));
 
   std::cout << std::endl;
   canvas -> save(OUT_FILE.c_str());
@@ -227,5 +206,6 @@ int main(int argc, char **argv) {
   if (int err = program.parseArgs(argc, argv); err != 0) {
     return err;
   }
+  program.register_signal_callback();
   return program.run();
 }
