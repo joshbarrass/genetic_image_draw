@@ -36,6 +36,8 @@ Main::~Main() {
 }
 
 int Main::parseArgs(int argc, char **argv) {
+  this_program = std::string(argv[0]);
+  
   option longopts[] = {
       {"triangles", required_argument, NULL, 'n'},
       {"output", required_argument, NULL, 'o'},
@@ -175,7 +177,7 @@ int Main::run() {
 
   ProgressBar pbar(50, 0, ITERATIONS);
   pbar.Display();
-  do {
+  while (pbar.GetValue() < ITERATIONS && (!FINISH_NOW)) {
     // generate a new generation
     gen.NextGeneration(canvas, target);
 
@@ -193,7 +195,15 @@ int Main::run() {
       std::cout << " (" << pbar.GetValue() << "/" <<  ITERATIONS << ")";
       printf(" (error: %.3E)", err);
     } // otherwise, do nothing. Memory will be freed next generation.
-  } while (pbar.GetValue() < ITERATIONS && (!FINISH_NOW));
+  }
+
+  if (FINISH_NOW) {
+    using namespace std;
+    cout << "To resume, use the command:" << endl;
+    int tris_remaining = ITERATIONS - pbar.GetValue();
+    cout << this_program << " -f \"" << IMAGE_FILE << "\" -r \"" << OUT_FILE
+         << "\" -o \"" << OUT_FILE << "\" -n " << tris_remaining << endl;
+  }
 
   std::cout << std::endl;
   canvas -> save(OUT_FILE.c_str());

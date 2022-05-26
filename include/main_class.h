@@ -27,6 +27,9 @@ private:
   int SEED;
   bool set_seed;
 
+  // used for outputting resume command
+  std::string this_program;
+
   Image *target;
   Image *canvas;
 
